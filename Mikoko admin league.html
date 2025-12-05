@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en" class="transition-colors duration-500">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mikoko League - ADMIN DASHBOARD</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the Mikoko color theme */
+        .mikoko-red {
+            --tw-bg-opacity: 1;
+            background-color: rgb(239 68 68 / var(--tw-bg-opacity)); /* red-500 */
+        }
+        .dark .mikoko-red {
+            background-color: rgb(220 38 38 / var(--tw-bg-opacity)); /* red-700 */
+        }
+
+        /* Set font to Inter for better readability */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* --- Custom Table Layout for Scroll Alignment --- */
+        .table-scroll-container tbody {
+            display: block; 
+            height: 24rem; 
+            overflow-y: auto;
+        }
+
+        .table-scroll-container thead, 
+        .table-scroll-container tbody tr {
+            display: table; 
+            width: 100%; 
+            table-layout: fixed; 
+        }
+
+        /* Define fixed widths for ALL column headers (th) and body cells (td) */
+        .table-scroll-container th:nth-child(1),
+        .table-scroll-container td:nth-child(1) { width: 5%; } /* # */
+
+        .table-scroll-container th:nth-child(2),
+        .table-scroll-container td:nth-child(2) { width: 45%; } /* Team Name (Wider) */
+
+        .table-scroll-container th:nth-child(3),
+        .table-scroll-container td:nth-child(3) { width: 10%; } /* P */
+
+        .table-scroll-container th:nth-child(4),
+        .table-scroll-container td:nth-child(4) { width: 10%; } /* W */
+        
+        .table-scroll-container th:nth-child(5),
+        .table-scroll-container td:nth-child(5) { width: 10%; } /* D */
+
+        .table-scroll-container th:nth-child(6),
+        .table-scroll-container td:nth-child(6) { width: 10%; } /* L */
+
+        .table-scroll-container th:nth-child(7),
+        .table-scroll-container td:nth-child(7) { width: 10%; } /* Pts */
+
+        /* Editable Cell Styling */
+        .editable-cell:hover {
+            cursor: pointer;
+            background-color: rgba(252, 165, 165, 0.1); /* red-300 with transparency */
+        }
+        .dark .editable-cell:hover {
+            background-color: rgba(185, 28, 28, 0.2); /* red-700 with transparency */
+        }
+        .editable-cell input {
+            width: 100%;
+            text-align: center;
+            border: 1px solid #f87171; /* red-400 */
+            padding: 2px 0;
+            background-color: white;
+            color: black;
+            border-radius: 4px;
+        }
+        .dark .editable-cell input {
+            background-color: #374151; /* gray-700 */
+            color: white;
+            border: 1px solid #f87171;
+        }
+
+
+        /* Modal Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: none; 
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: 0.75rem; 
+            padding: 2.5rem; 
+            width: 90%;
+            max-width: 40rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .dark .modal-content {
+            background-color: rgb(31 41 55); 
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 font-sans min-h-screen transition-colors duration-500">
+
+    <nav class="bg-white dark:bg-gray-800 shadow-md transition-colors duration-500">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <span class="text-2xl font-extrabold text-red-600 dark:text-red-400">MIKOKO LEAGUE - ADMIN</span>
+            <div class="flex items-center space-x-4">
+                <p id="userIdDisplay" class="text-xs text-gray-500 dark:text-gray-400">Admin User</p>
+                <a href="Mikoko league.html" class="text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-300 transition duration-300 p-2 rounded-full">
+                    View Public Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container mx-auto px-4 py-8 space-y-12">
+
+        <section class="p-6 md:p-10 rounded-xl shadow-2xl mikoko-red text-white flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8">
+            <div class="text-center md:text-left flex-grow">
+                <h1 class="text-3xl sm:text-4xl font-black uppercase tracking-wider text-white">
+                    Administrator Control Panel
+                </h1>
+                <p class="text-xl font-medium text-red-100 mt-1">
+                    Manage Teams, Players, and League Standings
+                </p>
+            </div>
+            <button id="clearDataButton" class="px-6 py-2 bg-white text-red-600 font-semibold rounded-lg hover:bg-red-100 transition duration-300">
+                ⚠️ Reset All Data
+            </button>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-2 space-y-8">
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors duration-500">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 border-b pb-3 border-red-400 dark:border-red-600">
+                        League Table Standings (<span id="teamCount">0</span>/8 Teams Registered)
+                    </h2>
+                    
+                    <p class="text-sm text-red-500 dark:text-red-400 mb-3 font-semibold">
+                        *Click any number cell (P, W, D, L, Pts) to edit the team's record.*
+                    </p>
+                    <div class="overflow-x-auto table-scroll-container"> 
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700"> 
+                                <tr>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">#</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Team</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">P</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">W</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">D</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">L</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Pts</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leagueTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"> 
+                                <tr><td colspan="7" class="py-4 text-center text-gray-500 dark:text-gray-400">Loading teams or no teams registered yet...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors duration-500 border-t-4 border-red-500 dark:border-red-600" id="registration-section">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                        🚀 Team Registration
+                    </h2>
+                    <p class="text-gray-700 dark:text-gray-300 mb-4 text-sm">
+                        As Admin, register teams directly into the league (Max 8).
+                    </p>
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                        <input 
+                            type="text" 
+                            id="teamNameInput" 
+                            placeholder="e.g., The Tech Titans" 
+                            class="flex-grow p-3 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-red-500 focus:border-red-500"
+                            maxlength="30"
+                        >
+                        <button 
+                            id="registerButton"
+                            class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Register Team
+                        </button>
+                    </div>
+                    <p id="registrationMessage" class="mt-3 text-sm font-medium text-red-500 dark:text-red-400"></p>
+                </section>
+
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors duration-500">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 border-b pb-3 border-red-400 dark:border-red-600">
+                        🗓️ Fixture Management (TBD vs TBD)
+                    </h2>
+                    
+                    <ul id="fixtureList" class="space-y-4">
+                        <li class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm flex justify-between items-center">
+                            <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">Fixtures pending team registration...</p>
+                        </li>
+                    </ul>
+                </section>
+            </div>
+
+            <div class="lg:col-span-1 space-y-8">
+                
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors duration-500 border-l-4 border-red-500 dark:border-red-600">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                        👤 Player Drafting & Assignment
+                    </h2>
+                    <p class="text-gray-700 dark:text-gray-300 text-sm mb-4">
+                        Click on a registered team to draft a player from the unassigned pool.
+                    </p>
+                    <div id="teamButtonsContainer" class="space-y-3">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">No teams registered for assignment.</p>
+                    </div>
+                </section>
+
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors duration-500">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 border-b pb-3 border-red-400 dark:border-red-600">
+                        ⭐ Unassigned Players
+                    </h2>
+                    <div id="unassignedPlayersList" class="h-24 overflow-y-auto space-y-2 text-sm text-gray-700 dark:text-gray-300 pr-2">
+                        <p class="font-semibold text-gray-500 dark:text-gray-400">No players registered yet.</p>
+                    </div>
+                </section>
+
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors duration-500">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 border-b pb-3 border-red-400 dark:border-red-600">
+                        📋 League Roster
+                    </h2>
+                    
+                    <div id="rosterList" class="h-48 overflow-y-auto space-y-2 text-sm text-gray-700 dark:text-gray-300 pr-2">
+                        <p class="font-semibold text-gray-500 dark:text-gray-400">No players assigned yet.</p>
+                    </div>
+                </section>
+
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors duration-500 border-r-4 border-red-500 dark:border-red-600" id="teamManagementSection">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                        🗑️ Team Management
+                    </h2>
+                    <p class="text-gray-700 dark:text-gray-300 text-sm mb-3">
+                        Select a team to remove them from the league.
+                    </p>
+                    <div class="space-y-3">
+                        <select id="removeTeamDropdown" class="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-gray-100">
+                            <option value="">-- Select Team --</option>
+                        </select>
+                        <button 
+                            id="removeTeamButton"
+                            class="w-full px-6 py-3 bg-gray-400 hover:bg-gray-500 text-white font-semibold rounded-lg transition duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled
+                        >
+                            Remove Selected Team
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </div>
+          <!-- TOP SCORERS MANAGEMENT -->
+     <!-- Updated TOP SCORERS MANAGEMENT -->
+<section class="card p-6 bg-gray-900 rounded-2xl shadow-xl border border-gray-700">
+    <h2 class="text-3xl font-bold text-red-400 mb-6 flex items-center gap-2">
+        <i class="fas fa-futbol"></i> Top Goal Scorers (Top 20)
+    </h2>
+
+    <!-- Input Area -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <input type="text" id="scorerName" placeholder="Player Name" class="p-4 bg-gray-800 text-white rounded-xl border border-gray-700 focus:border-red-400 focus:ring-2 focus:ring-red-500 outline-none transition">
+        
+        <input type="number" id="scorerGoals" placeholder="Goals" class="p-4 bg-gray-800 text-white rounded-xl border border-gray-700 focus:border-red-400 focus:ring-2 focus:ring-red-500 outline-none transition">
+        
+        <button id="addScorerBtn" class="px-4 py-4 rounded-xl bg-red-500 hover:bg-red-600 text-black font-semibold shadow-md transition flex items-center justify-center gap-2">
+            <i class="fas fa-plus"></i> Add / Update Scorer
+        </button>
+    </div>
+
+    <!-- List -->
+    <div id="scorersList" class="space-y-3 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
+        <!-- Dynamic scorer cards will load here -->
+    </div>
+</section>
+
+<style>
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #1f2937;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: red;
+    border-radius: 10px;
+}
+</style>
+
+    </main>
+    
+    <footer class="bg-gray-800 dark:bg-gray-950 text-white p-6 mt-12 shadow-inner transition-colors duration-500">
+        <div class="container mx-auto text-center">
+            <p class="text-sm font-light">
+                Mikoko League | Admin Dashboard.
+            </p>
+        </div>
+    </footer>
+
+    <div id="playerModal" class="modal-backdrop hidden">
+        <div class="modal-content dark:text-gray-100">
+            <div class="flex justify-between items-start mb-6 border-b pb-3">
+                <h3 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100" id="modalTitle">Assign Player to Team X</h3>
+                <button onclick="closePlayerModal()" class="text-gray-500 hover:text-red-500 text-3xl font-light leading-none transition duration-150">×</button>
+            </div>
+
+            <div class="space-y-4">
+                 <p class="text-lg font-medium text-gray-700 dark:text-gray-300">Select Player to Draft:</p>
+                 <select id="draftPlayerDropdown" class="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-gray-100">
+                    <option value="">-- Select Player --</option>
+                    </select>
+                <div class="flex justify-end pt-4">
+                    <button 
+                        id="assignPlayerButton"
+                        class="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled
+                    >
+                        Draft Player
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<script type="module">
+    // --- Configuration ---
+    const MAX_TEAMS = 8;
+    const TEAM_STORAGE_KEY = 'mikoko_teams_admin';
+    const PLAYER_STORAGE_KEY = 'mikoko_players_admin';
+    const FIXTURE_STORAGE_KEY = 'mikoko_fixtures_admin';
+    
+    // --- Local State Variables ---
+    let registeredTeams = []; 
+    let draftedPlayers = []; // Players assigned to a team
+    let unassignedPlayers = [ // Mock players who "registered" on the public page
+        { id: 'p1', name: 'Student A - Midfielder', skillScore: 8, registeredAt: Date.now() - 30000 },
+        { id: 'p2', name: 'Student B - Goalkeeper', skillScore: 7, registeredAt: Date.now() - 20000 },
+    ]; 
+    let leagueFixtures = []; // Stores fixture data
+    let currentUserId = 'admin-user'; 
+    
+    // --- DOM Elements ---
+    const registerButton = document.getElementById('registerButton');
+    const teamNameInput = document.getElementById('teamNameInput');
+    const registrationMessage = document.getElementById('registrationMessage');
+    const leagueTableBody = document.getElementById('leagueTableBody');
+    const rosterList = document.getElementById('rosterList');
+    const teamCountSpan = document.getElementById('teamCount');
+    const teamButtonsContainer = document.getElementById('teamButtonsContainer');
+    const playerModal = document.getElementById('playerModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const draftPlayerDropdown = document.getElementById('draftPlayerDropdown');
+    const assignPlayerButton = document.getElementById('assignPlayerButton');
+    const removeTeamDropdown = document.getElementById('removeTeamDropdown');
+    const removeTeamButton = document.getElementById('removeTeamButton');
+    const unassignedPlayersList = document.getElementById('unassignedPlayersList');
+    const fixtureList = document.getElementById('fixtureList');
+    const clearDataButton = document.getElementById('clearDataButton');
+
+    // State for player assignment modal
+    let targetTeamForAssignment = null; 
+    
+    // --- Core State Management and Initialization ---
+
+    document.addEventListener('DOMContentLoaded', initializeLocalState);
+
+    function initializeLocalState() {
+        loadStateFromLocalStorage();
+        sortAndRenderTeams();
+        renderUnassignedPlayers();
+        renderFixtures();
+        
+        // Attach event handlers
+        if (registerButton) registerButton.onclick = registerTeam;
+        if (removeTeamButton) removeTeamButton.onclick = removeTeam;
+        if (assignPlayerButton) assignPlayerButton.onclick = assignPlayer;
+        if (removeTeamDropdown) removeTeamDropdown.onchange = updateRemoveButtonState;
+        if (draftPlayerDropdown) draftPlayerDropdown.onchange = updateDraftButtonState;
+        if (clearDataButton) clearDataButton.onclick = resetAllData;
+    }
+
+    // --- Persistence ---
+
+    /** Loads all data from Local Storage. */
+    function loadStateFromLocalStorage() {
+        const storedTeams = localStorage.getItem(TEAM_STORAGE_KEY);
+        const storedPlayers = localStorage.getItem(PLAYER_STORAGE_KEY);
+        const storedUnassigned = localStorage.getItem('mikoko_unassigned_players'); // New key for unassigned
+        const storedFixtures = localStorage.getItem(FIXTURE_STORAGE_KEY);
+
+        if (storedTeams) registeredTeams = JSON.parse(storedTeams);
+        if (storedPlayers) draftedPlayers = JSON.parse(storedPlayers);
+        if (storedUnassigned) unassignedPlayers = JSON.parse(storedUnassigned);
+        if (storedFixtures) leagueFixtures = JSON.parse(storedFixtures);
+
+        // Ensure the initial mock players are present if the list is empty
+        if (unassignedPlayers.length === 0 && registeredTeams.length === 0) {
+             unassignedPlayers = [
+                { id: 'p1', name: 'Student A - Midfielder', skillScore: 8, registeredAt: Date.now() - 30000 },
+                { id: 'p2', name: 'Student B - Goalkeeper', skillScore: 7, registeredAt: Date.now() - 20000 },
+            ];
+            saveUnassignedPlayers();
+        }
+    }
+
+    /** Saves all data to Local Storage. */
+    function saveStateToLocalStorage() {
+        localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(registeredTeams));
+        localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify(draftedPlayers));
+        localStorage.setItem(FIXTURE_STORAGE_KEY, JSON.stringify(leagueFixtures));
+        saveUnassignedPlayers(); // Separate save for unassigned
+    }
+
+    /** Saves only the unassigned players list. */
+    function saveUnassignedPlayers() {
+        localStorage.setItem('mikoko_unassigned_players', JSON.stringify(unassignedPlayers));
+    }
+
+    /** Clears all league data. */
+    function resetAllData() {
+        if (confirm("WARNING: This will permanently delete ALL team, player, and fixture data. Are you sure?")) {
+            localStorage.removeItem(TEAM_STORAGE_KEY);
+            localStorage.removeItem(PLAYER_STORAGE_KEY);
+            localStorage.removeItem(FIXTURE_STORAGE_KEY);
+            localStorage.removeItem('mikoko_unassigned_players');
+            
+            registeredTeams = [];
+            draftedPlayers = [];
+            leagueFixtures = [];
+            unassignedPlayers = []; // Initial mock players will be re-added on next load
+            
+            initializeLocalState(); // Reload state
+            alert("All league data has been reset.");
+        }
+    }
+
+
+    // --- Team Registration/Management ---
+
+    window.registerTeam = function() {
+        const teamName = teamNameInput.value.trim();
+
+        if (!teamName || teamName.length < 3) {
+            registrationMessage.textContent = "Please enter a team name (min 3 chars).";
+            return;
+        }
+
+        if (registeredTeams.length >= MAX_TEAMS) {
+            registrationMessage.textContent = "Registration failed: The league is now full.";
+            return;
+        }
+        
+        const isNameTaken = registeredTeams.some(team => team.name.toLowerCase() === teamName.toLowerCase());
+        if (isNameTaken) {
+            registrationMessage.textContent = `The team name "${teamName}" is already taken.`;
+            return;
+        }
+
+        registerButton.disabled = true;
+        registerButton.textContent = "Registering...";
+        registrationMessage.textContent = "";
+
+        setTimeout(() => {
+            const newTeam = {
+                id: Date.now(),
+                name: teamName,
+                P: 0, W: 0, D: 0, L: 0, Pts: 0
+            };
+
+            registeredTeams.push(newTeam);
+            teamNameInput.value = '';
+
+            // Generate fixtures when teams reach 4 or more, or based on a round robin (simplified)
+            if (registeredTeams.length >= 2) {
+                generateFixtures();
+            }
+
+            sortAndRenderTeams();
+            saveStateToLocalStorage();
+            
+            registerButton.disabled = false;
+            registerButton.textContent = "Register Team";
+        }, 500);
+    }
+    
+    window.removeTeam = function() {
+        const teamToRemoveName = removeTeamDropdown.value;
+
+        if (!teamToRemoveName || !confirm(`Are you sure you want to remove team "${teamToRemoveName}"? This is irreversible.`)) {
+            return;
+        }
+        
+        // Move drafted players back to unassigned pool
+        const removedPlayers = draftedPlayers.filter(player => player.team === teamToRemoveName);
+        unassignedPlayers.push(...removedPlayers.map(p => ({ 
+            id: p.id, 
+            name: p.name, 
+            skillScore: p.skillScore, 
+            registeredAt: Date.now() 
+        })));
+        
+        // Remove the team and players
+        registeredTeams = registeredTeams.filter(team => team.name !== teamToRemoveName);
+        draftedPlayers = draftedPlayers.filter(player => player.team !== teamToRemoveName);
+        
+        // Regenerate or clean up fixtures
+        leagueFixtures = leagueFixtures.filter(f => f.team1 !== teamToRemoveName && f.team2 !== teamToRemoveName);
+        generateFixtures(); // Attempt to regenerate or update fixtures
+
+        removeTeamDropdown.value = "";
+        updateRemoveButtonState();
+
+        sortAndRenderTeams();
+        renderUnassignedPlayers();
+        saveStateToLocalStorage();
+        alert(`Team "${teamToRemoveName}" has been removed. Players were returned to the unassigned pool.`);
+    }
+
+    function updateRemoveButtonState() {
+        if (removeTeamButton) {
+            removeTeamButton.disabled = !removeTeamDropdown.value;
+            removeTeamButton.className = removeTeamDropdown.value
+                ? 'w-full px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition duration-300 shadow-md'
+                : 'w-full px-6 py-3 bg-gray-400 hover:bg-gray-500 text-white font-semibold rounded-lg transition duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed';
+        }
+    }
+
+
+    // --- Editable Table Logic (Admin Feature) ---
+
+    /** Makes the table cell content editable on click. */
+    window.editTeamStat = function(element, teamName, statKey) {
+        if (element.querySelector('input')) return; // Already editing
+
+        const originalValue = element.textContent;
+        element.innerHTML = `<input type="number" value="${originalValue}" min="0" data-team="${teamName}" data-key="${statKey}">`;
+        
+        const input = element.querySelector('input');
+        input.focus();
+
+        input.onblur = () => saveTeamStat(input, teamName, statKey);
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                input.blur();
+            }
+        };
+    }
+
+    /** Saves the new statistic value for a team. */
+    function saveTeamStat(inputElement, teamName, statKey) {
+        const newValue = parseInt(inputElement.value) || 0;
+        const team = registeredTeams.find(t => t.name === teamName);
+
+        if (team) {
+            team[statKey] = newValue;
+            
+            // Recalculate Pts based on new W/D/L (Optional: Pts = W*3 + D*1)
+            if (['W', 'D', 'L'].includes(statKey)) {
+                team.P = team.W + team.D + team.L;
+                team.Pts = (team.W * 3) + team.D;
+            }
+
+            // After saving, re-render to update the table and sort order
+            sortAndRenderTeams();
+            saveStateToLocalStorage();
+        }
+    }
+
+
+    // --- Player Assignment Functions (Modal Logic) ---
+    
+    window.openPlayerModal = function(teamName) {
+        if (unassignedPlayers.length === 0) {
+            alert("No players in the unassigned pool to draft. Tell users to register!");
+            return;
+        }
+
+        targetTeamForAssignment = teamName;
+        modalTitle.textContent = `Draft Player to ${teamName}`;
+        
+        // Populate dropdown with unassigned players
+        draftPlayerDropdown.innerHTML = '<option value="">-- Select Player --</option>';
+        unassignedPlayers.forEach(player => {
+            const option = document.createElement('option');
+            option.value = player.id;
+            option.textContent = `${player.name} (Skill: ${player.skillScore})`;
+            draftPlayerDropdown.appendChild(option);
+        });
+
+        updateDraftButtonState(); // Initial check for button state
+        playerModal.classList.remove('hidden');
+        playerModal.style.display = 'flex';
+    }
+
+    window.closePlayerModal = function() {
+        playerModal.classList.add('hidden');
+        playerModal.style.display = 'none';
+        targetTeamForAssignment = null;
+    }
+
+    function updateDraftButtonState() {
+        if (assignPlayerButton) {
+            assignPlayerButton.disabled = !draftPlayerDropdown.value;
+        }
+    }
+
+    window.assignPlayer = function() {
+        const playerId = draftPlayerDropdown.value;
+
+        if (!playerId || !targetTeamForAssignment) {
+            alert("Error: Player or target team not selected.");
+            return;
+        }
+
+        // 1. Find player to draft
+        const playerIndex = unassignedPlayers.findIndex(p => p.id === playerId);
+        if (playerIndex === -1) return; // Should not happen
+        
+        const playerToDraft = unassignedPlayers[playerIndex];
+
+        // 2. Remove from unassigned and add to drafted
+        unassignedPlayers.splice(playerIndex, 1);
+        
+        const newPlayer = {
+            id: playerToDraft.id,
+            name: playerToDraft.name,
+            team: targetTeamForAssignment,
+            goals: 0,
+            assists: 0,
+            skillScore: playerToDraft.skillScore
+        };
+
+        draftedPlayers.push(newPlayer);
+
+        // 3. Update the UI and save
+        renderRosterList();
+        renderUnassignedPlayers();
+        renderTeamButtons(registeredTeams); // Update player count on buttons
+        saveStateToLocalStorage();
+        
+        // 4. Close the modal
+        closePlayerModal();
+        alert(`Player ${newPlayer.name} successfully drafted to ${targetTeamForAssignment}!`);
+    }
+
+    // --- Fixture Management ---
+
+    /** Simple round-robin fixture generation for up to 8 teams. */
+    function generateFixtures() {
+        const names = registeredTeams.map(t => t.name);
+        if (names.length < 2) {
+            leagueFixtures = [];
+            return;
+        }
+
+        // Only generate if we don't have enough matches. Simple implementation:
+        // For N teams, we need N * (N-1) / 2 unique matches.
+
+        const newFixtures = [];
+        for (let i = 0; i < names.length; i++) {
+            for (let j = i + 1; j < names.length; j++) {
+                const team1 = names[i];
+                const team2 = names[j];
+                const matchId = `${team1}-${team2}`;
+
+                // Check if match already exists
+                if (!leagueFixtures.find(f => f.id === matchId)) {
+                     newFixtures.push({
+                        id: matchId,
+                        team1: team1,
+                        team2: team2,
+                        score1: null,
+                        score2: null,
+                        date: 'TBD',
+                        status: 'PENDING'
+                    });
+                }
+            }
+        }
+        
+        // Add new fixtures to existing ones
+        leagueFixtures.push(...newFixtures);
+        renderFixtures();
+    }
+
+    /** Renders the fixture list for admin editing. */
+    function renderFixtures() {
+        if (!fixtureList) return;
+        fixtureList.innerHTML = '';
+
+        if (leagueFixtures.length === 0) {
+            fixtureList.innerHTML = `<li class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm">
+                <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">Fixtures pending team registration...</p>
+            </li>`;
+            return;
+        }
+
+        leagueFixtures.forEach(fixture => {
+            const statusClass = fixture.status === 'COMPLETED' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+            
+            const listItem = document.createElement('li');
+            listItem.className = 'p-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm flex flex-col space-y-2';
+            listItem.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <p class="text-base font-bold text-gray-900 dark:text-gray-100">${fixture.team1} vs. ${fixture.team2}</p>
+                    <span class="px-3 py-1 text-xs font-medium rounded-full ${statusClass}">${fixture.status}</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex-1 flex items-center space-x-2">
+                        <label class="text-sm text-gray-700 dark:text-gray-300">${fixture.team1} Score:</label>
+                        <input type="number" min="0" value="${fixture.score1 !== null ? fixture.score1 : ''}" data-team="${fixture.team1}" data-id="${fixture.id}" data-score-key="score1" placeholder="0" class="w-16 p-1 border rounded text-center text-sm dark:bg-gray-800 dark:text-gray-100">
+                    </div>
+                    <div class="flex-1 flex items-center space-x-2">
+                        <label class="text-sm text-gray-700 dark:text-gray-300">${fixture.team2} Score:</label>
+                        <input type="number" min="0" value="${fixture.score2 !== null ? fixture.score2 : ''}" data-team="${fixture.team2}" data-id="${fixture.id}" data-score-key="score2" placeholder="0" class="w-16 p-1 border rounded text-center text-sm dark:bg-gray-800 dark:text-gray-100">
+                    </div>
+                    <button onclick="saveFixtureScore('${fixture.id}')" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition duration-150">Save</button>
+                </div>
+            `;
+            fixtureList.appendChild(listItem);
+        });
+    }
+
+    /** Saves the scores and updates league table points. */
+    window.saveFixtureScore = function(fixtureId) {
+        const inputs = fixtureList.querySelectorAll(`input[data-id="${fixtureId}"]`);
+        if (inputs.length !== 2) return;
+
+        const score1 = parseInt(inputs[0].value) || 0;
+        const score2 = parseInt(inputs[1].value) || 0;
+
+        const fixture = leagueFixtures.find(f => f.id === fixtureId);
+        if (fixture) {
+            
+            // 1. Get old scores for net difference calculation
+            const oldScore1 = fixture.score1 !== null ? fixture.score1 : -1;
+            const oldScore2 = fixture.score2 !== null ? fixture.score2 : -1;
+
+            // 2. Update fixture state
+            fixture.score1 = score1;
+            fixture.score2 = score2;
+            fixture.status = 'COMPLETED';
+
+            // 3. Apply point calculation changes only if the score *was* saved or is new
+            if (oldScore1 !== score1 || oldScore2 !== score2) {
+                // Before recalculating, reset points for this match
+                if (oldScore1 !== -1) {
+                    // Reverse the previous result's effect on points
+                    updateTeamPoints(fixture.team1, oldScore1, oldScore2, -1);
+                    updateTeamPoints(fixture.team2, oldScore2, oldScore1, -1);
+                }
+                
+                // Apply new result's effect on points
+                updateTeamPoints(fixture.team1, score1, score2, 1);
+                updateTeamPoints(fixture.team2, score2, score1, 1);
+            }
+            
+            sortAndRenderTeams();
+            renderFixtures(); // Re-render to show updated status/saved state
+            saveStateToLocalStorage();
+            alert(`Result for ${fixture.team1} vs ${fixture.team2} saved and points updated!`);
+        }
+    }
+
+    /** Helper function to update W/D/L/P/Pts for a team based on a match result. */
+    function updateTeamPoints(teamName, teamScore, opponentScore, multiplier) {
+        const team = registeredTeams.find(t => t.name === teamName);
+        if (!team) return;
+        
+        let W = 0, D = 0, L = 0;
+        let Pts = 0;
+
+        if (teamScore > opponentScore) {
+            W = 1; Pts = 3;
+        } else if (teamScore < opponentScore) {
+            L = 1; Pts = 0;
+        } else {
+            D = 1; Pts = 1;
+        }
+
+        team.W += (W * multiplier);
+        team.D += (D * multiplier);
+        team.L += (L * multiplier);
+        team.P += (1 * multiplier); // Total games played
+        team.Pts += (Pts * multiplier);
+    }
+
+
+    // --- Rendering Functions ---
+
+    function sortAndRenderTeams() {
+        // Sort teams by Points (desc), then by W (desc), then by L (asc), then by registeredAt (asc)
+        registeredTeams.sort((a, b) => {
+            if (b.Pts !== a.Pts) return b.Pts - a.Pts;
+            if (b.W !== a.W) return b.W - a.W;
+            if (a.L !== b.L) return a.L - b.L;
+            return a.registeredAt - b.registeredAt;
+        });
+        
+        renderLeagueTable(registeredTeams);
+        renderTeamButtons(registeredTeams);
+        renderRemoveTeamDropdown(registeredTeams);
+        renderRosterList();
+        updateRegistrationUI(registeredTeams.length);
+    }
+
+    function renderLeagueTable(teams) {
+        if (leagueTableBody) leagueTableBody.innerHTML = ''; 
+        
+        teams.forEach((team, index) => {
+            const isTopFour = index < 4;
+
+            const row = document.createElement('tr');
+            row.className = `hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200`;
+            
+            const rankClass = isTopFour ? 'text-red-600 dark:text-red-400 font-bold' : 'text-gray-500 dark:text-gray-400';
+
+            row.innerHTML = `
+                <td class="px-3 py-4 text-center text-sm font-medium ${rankClass}">${index + 1}</td>
+                <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100 text-sm">${team.name}</td>
+                <td class="px-3 py-4 text-center text-sm editable-cell" onclick="editTeamStat(this, '${team.name}', 'P')">${team.P || 0}</td>
+                <td class="px-3 py-4 text-center text-sm editable-cell" onclick="editTeamStat(this, '${team.name}', 'W')">${team.W || 0}</td>
+                <td class="px-3 py-4 text-center text-sm editable-cell" onclick="editTeamStat(this, '${team.name}', 'D')">${team.D || 0}</td>
+                <td class="px-3 py-4 text-center text-sm editable-cell" onclick="editTeamStat(this, '${team.name}', 'L')">${team.L || 0}</td>
+                <td class="px-3 py-4 text-center text-sm font-bold ${rankClass} editable-cell" onclick="editTeamStat(this, '${team.name}', 'Pts')">${team.Pts || 0}</td>
+            `;
+            if (leagueTableBody) leagueTableBody.appendChild(row);
+        });
+
+        // Fill remaining slots
+        for (let i = teams.length; i < MAX_TEAMS; i++) {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-100 dark:hover:bg-gray-700';
+            row.innerHTML = `
+                <td class="px-3 py-4 text-center text-sm text-gray-400">${i + 1}</td>
+                <td class="px-6 py-4 text-gray-400 text-sm">NIL - Slot Open</td>
+                <td class="px-3 py-4 text-center text-sm text-gray-400">0</td>
+                <td class="px-3 py-4 text-center text-sm text-gray-400">0</td>
+                <td class="px-3 py-4 text-center text-sm text-gray-400">0</td>
+                <td class="px-3 py-4 text-center text-sm text-gray-400">0</td>
+                <td class="px-3 py-4 text-center text-sm text-gray-400">0</td>
+            `;
+            if (leagueTableBody) leagueTableBody.appendChild(row);
+        }
+    }
+
+    function renderTeamButtons(teams) {
+        if (!teamButtonsContainer) return;
+        teamButtonsContainer.innerHTML = '';
+
+        if (teams.length === 0) {
+            teamButtonsContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No teams registered for assignment.</p>';
+            return;
+        }
+
+        teams.forEach(team => {
+            const playerCount = draftedPlayers.filter(p => p.team === team.name).length;
+            const button = document.createElement('button');
+            button.className = 'w-full px-4 py-2 bg-red-100 text-red-700 font-semibold rounded-lg hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800 transition duration-200 flex justify-between items-center';
+            button.innerHTML = `
+                <span>${team.name}</span>
+                <span class="text-xs px-2 py-0.5 bg-red-300 text-red-900 dark:bg-red-700 dark:text-red-100 rounded-full">${playerCount} Players</span>
+            `;
+            button.onclick = () => openPlayerModal(team.name);
+            teamButtonsContainer.appendChild(button);
+        });
+    }
+    
+    function renderUnassignedPlayers() {
+        if (!unassignedPlayersList) return;
+        unassignedPlayersList.innerHTML = '';
+
+        if (unassignedPlayers.length === 0) {
+            unassignedPlayersList.innerHTML = '<p class="font-semibold text-gray-500 dark:text-gray-400">All registered players have been drafted.</p>';
+            return;
+        }
+
+        unassignedPlayers.forEach(player => {
+            const playerItem = document.createElement('p');
+            playerItem.className = 'text-gray-700 dark:text-gray-300 ml-2';
+            playerItem.textContent = `• ${player.name} (Skill: ${player.skillScore})`;
+            unassignedPlayersList.appendChild(playerItem);
+        });
+    }
+
+    function renderRosterList() {
+        if (!rosterList) return;
+        rosterList.innerHTML = '';
+        
+        if (draftedPlayers.length === 0) {
+             rosterList.innerHTML = '<p class="font-semibold text-gray-500 dark:text-gray-400">No players assigned yet.</p>';
+             return;
+        }
+        
+        const playersByTeam = registeredTeams.map(team => ({
+            name: team.name,
+            players: draftedPlayers.filter(p => p.team === team.name)
+        }));
+
+        playersByTeam.forEach(teamData => {
+            // Team Heading
+            const teamHeader = document.createElement('p');
+            teamHeader.className = 'font-bold text-red-600 dark:text-red-400 mt-3 mb-1 uppercase text-xs tracking-wider border-b border-red-200 dark:border-red-700 pb-1';
+            teamHeader.textContent = `${teamData.name} (${teamData.players.length} players)`;
+            rosterList.appendChild(teamHeader);
+
+            // Player List
+            if (teamData.players.length > 0) {
+                teamData.players.forEach(player => {
+                    const playerItem = document.createElement('p');
+                    playerItem.className = 'text-gray-700 dark:text-gray-300 ml-2';
+                    playerItem.textContent = `• ${player.name} (Skill: ${player.skillScore})`;
+                    rosterList.appendChild(playerItem);
+                });
+            } else {
+                 const playerItem = document.createElement('p');
+                playerItem.className = 'text-gray-500 dark:text-gray-400 ml-2 italic';
+                playerItem.textContent = `No players drafted yet.`;
+                rosterList.appendChild(playerItem);
+            }
+        });
+    }
+
+    function renderRemoveTeamDropdown(teams) {
+        if (!removeTeamDropdown) return;
+        
+        removeTeamDropdown.innerHTML = '<option value="">-- Select Team --</option>';
+
+        teams.forEach(team => {
+            const option = document.createElement('option');
+            option.value = team.name;
+            option.textContent = team.name;
+            removeTeamDropdown.appendChild(option);
+        });
+
+        updateRemoveButtonState();
+    }
+
+    function updateRegistrationUI(teamCount) {
+        if (teamCountSpan) teamCountSpan.textContent = teamCount;
+
+        if (teamCount >= MAX_TEAMS) {
+            if (registerButton) {
+                registerButton.disabled = true;
+                registerButton.textContent = "League Full";
+            }
+            if (registrationMessage) registrationMessage.textContent = "Registration is closed!";
+        } else {
+            if (registerButton) {
+                registerButton.disabled = false;
+                registerButton.textContent = "Register Team";
+            }
+            if (registrationMessage) registrationMessage.textContent = `There are ${MAX_TEAMS - teamCount} slots remaining.`;
+        }
+    }
+
+</script>
+    
+</body>
+</html>
