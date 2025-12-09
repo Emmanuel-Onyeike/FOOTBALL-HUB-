@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en" class="transition-colors duration-500">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mikoko League - Public Dashboard</title>
+     <link rel="icon" type="image/svg+xml" href="MIKOKO .png">
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Custom styles for the Mikoko color theme */
+        .mikoko-red {
+            --tw-bg-opacity: 1;
+            background-color: rgb(239 68 68 / var(--tw-bg-opacity)); /* red-500 */
+        }
+        .mikoko-dark-card {
+             background-color: #1f2937; /* dark gray bg */
+        }
+        .mikoko-news-border {
+             border-color: #fca5a5; /* Red-300 for dark mode */
+        }
+
+        /* Set font to Inter for better readability */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* light gray bg */
+        }
+        .dark body {
+            background-color: #111827; /* dark gray bg */
+        }
+        .dark .bg-white {
+            background-color: #1f2937;
+        }
+
+        /* Responsive Layout for Fixtures */
+        .fixture-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s;
+        }
+        .fixture-card:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Status Colors */
+        .status-completed { background-color: #d1fae5; color: #065f46; font-weight: 600; } /* green-100/700 */
+        .status-pending { background-color: #fee2e2; color: #991b1b; font-weight: 600; } /* red-100/700 */
+        .dark .status-completed { background-color: #064e3b; color: #a7f3d0; } /* dark green */
+        .dark .status-pending { background-color: #450a0a; color: #fecaca; } /* dark red */
+        
+        .news-item {
+            border-left: 4px solid #f87171; /* red-400 */
+        }
+        .dark .news-item {
+            border-left: 4px solid #ef4444; /* red-500 */
+        }
+
+        /* Chat Specific Styling */
+        #chatMessages {
+            height: 400px; /* Fixed height for chat window */
+            max-height: 70vh; /* Max height on mobile */
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            padding: 1rem;
+        }
+        .message-bubble {
+            max-width: 85%; /* Make it slightly wider on small screens */
+            word-wrap: break-word; /* Ensure long words break */
+        }
+        /* Hide scrollbar for aesthetics */
+        #chatMessages::-webkit-scrollbar {
+            display: none;
+        }
+        #chatMessages {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Input icons */
+        .chat-icon-button {
+            transition: color 0.2s, transform 0.1s;
+        }
+        .chat-icon-button:hover {
+            transform: scale(1.1);
+        }
+        .chat-icon-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 font-sans min-h-screen transition-colors duration-500">
+
+    <!-- USER NAME MODAL (Hidden by default) -->
+    <div id="usernameModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center hidden">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md m-4">
+            <h2 class="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Join the Chat!</h2>
+            <p class="text-gray-700 dark:text-gray-300 mb-6">Enter a name to start sending messages. Your profile picture is optional (disabled in this version).</p>
+            <input 
+                type="text" 
+                id="chatUserNameInput" 
+                placeholder="Your Chat Name" 
+                class="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-red-500 focus:border-red-500"
+                maxlength="20"
+            >
+            <button 
+                id="saveUserNameButton"
+                class="w-full px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition duration-300 shadow-md mt-4"
+            >
+                Start Chatting
+            </button>
+        </div>
+    </div>
+
+    <!-- NAV BAR -->
+    <nav class="bg-white dark:bg-gray-800 shadow-md transition-colors duration-500">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <span class="text-2xl font-extrabold text-red-600 dark:text-red-400">MIKOKO LEAGUE</span>
+            <a href="#" id="authStatusIndicator" class="text-sm text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-300 transition duration-300 p-2 rounded-full">
+                Authenticating...
+            </a>
+        </div>
+    </nav>
+    
+    <main class="container mx-auto px-4 py-8 space-y-12">
+
+        <!-- LEAGUE HEADER -->
+        <section class="p-6 md:p-10 rounded-xl shadow-2xl mikoko-red text-white text-center flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-6">
+            <img 
+                src="MIKOKO .png" 
+                alt="Mikoko League Official Logo" 
+                class="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-white object-cover shadow-lg"
+                onerror="this.onerror=null; this.src='https://placehold.co/100x100/EF4444/FFFFFF?text=Logo';"
+            >
+            
+            <div>
+                <h1 class="text-3xl sm:text-4xl font-black uppercase tracking-wider text-white">
+                    League Standings and Player Dashboard
+                </h1>
+                <p class="text-xl font-medium text-red-100 mt-2">
+                    View the latest results and updates all for MIKOKO LEAGUE
+                </p>
+            </div>
+        </section>
+
+        <!-- LEAGUE NEWS SECTION -->
+        <section class="space-y-6">
+            <h2 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 border-b-2 border-red-500 dark:border-red-400 pb-3">
+                📰 Latest League News
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- News Items... -->
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md news-item transition duration-300 hover:shadow-lg hover:border-red-700 dark:hover:border-red-300">
+               <p class="text-sm font-semibold text-red-600 dark:text-red-400">LEAGUE UPDATE</p>
+<h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
+    Mikoko League Set to Kick Off the New Year
+</h3>
+<p class="text-sm text-gray-700 dark:text-gray-300 mt-2">
+    The long-awaited Mikoko League returns this new year with more intensity, fresh rivalries,
+    and upgraded rules. Teams are gearing up, fans are buzzing, and the countdown officially begins.
+</p>
+<span class="text-xs text-gray-500 dark:text-gray-400 mt-2 block">Just Now</span>
+
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md news-item transition duration-300 hover:shadow-lg hover:border-red-700 dark:hover:border-red-300">
+                   <p class="text-sm font-semibold text-red-600 dark:text-red-400">TEAM SELECTION</p>
+<h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
+    Official Team Selection Goes Live — Don’t Miss Out
+</h3>
+<p class="text-sm text-gray-700 dark:text-gray-300 mt-2">
+    All players are reminded to be online on the announced date for the automatic team selection event.
+    Mikoko’s new player–to–team assignment system will place players instantly and fairly.
+</p>
+<span class="text-xs text-gray-500 dark:text-gray-400 mt-2 block">Today</span>
+
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md news-item transition duration-300 hover:shadow-lg hover:border-red-700 dark:hover:border-red-300">
+                 <p class="text-sm font-semibold text-red-600 dark:text-red-400">LEAGUE ANNOUNCEMENT</p>
+<h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
+    Mikoko League Takes a Bold Turn in Its Format
+</h3>
+<p class="text-sm text-gray-700 dark:text-gray-300 mt-2">
+    The league will no longer run as a group-stage tournament. Instead, all divisions will follow a
+    full table system. Every match now counts — every point can change everything.
+</p>
+<span class="text-xs text-gray-500 dark:text-gray-400 mt-2 block">This Week</span>
+
+                </div>
+            </div>
+        </section>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- REGISTRATION & LEAGUE TABLE COLUMN -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- PLAYER REGISTRATION FORM -->
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors duration-500 border-t-4 border-red-500 dark:border-red-600" id="registration-form">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                        📝 Register to Play!
+                    </h2>
+                    <p class="text-gray-700 dark:text-gray-300 mb-4 text-sm">
+                        Enter your name below to join the Mikoko Player Pool. The Admin will assign you to a club!
+                    </p>
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                        <input 
+                            type="text" 
+                            id="playerNameInput" 
+                            placeholder="Your Full Name (e.g., Jane Doe)" 
+                            class="flex-grow p-3 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-red-500 focus:border-red-500"
+                            maxlength="50"
+                        >
+                        <button 
+                            id="registerPlayerButton"
+                            class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Register Me
+                        </button>
+                    </div>
+                    <p id="playerRegistrationMessage" class="mt-3 text-sm font-medium text-green-500 dark:text-green-400"></p>
+                </section>
+
+                <!-- LEAGUE TABLE -->
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors duration-500">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 border-b pb-3 border-red-400 dark:border-red-600">
+                        🏆 Official League Standings
+                    </h2>
+                    
+                    <div class="overflow-x-auto"> 
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700"> 
+                                <tr>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">#</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Team</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">P</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">W</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">D</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">L</th>
+                                    <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Pts</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leagueTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"> 
+                                <tr><td colspan="7" class="py-4 text-center text-gray-500 dark:text-gray-400">No teams registered yet...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- FIXTURES & ROSTER COLUMN -->
+            <div class="lg:col-span-1 space-y-8">
+                
+                <!-- FIXTURES -->
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors duration-500 border-l-4 border-red-500 dark:border-red-600">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                        🗓️ Match Fixtures & Results
+                    </h2>
+                    
+                    <div id="fixtureListContainer" class="h-96 overflow-y-auto pr-2 space-y-4">
+                        <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">No matches scheduled yet.</p>
+                    </div>
+                </section>
+
+                <!-- LEAGUE ROSTER (Players by team) -->
+                <section class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors duration-500">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 border-b pb-3 border-red-400 dark:border-red-600">
+                        📋 Official League Roster
+                    </h2>
+                    
+                    <div id="rosterList" class="h-64 overflow-y-auto space-y-3 text-sm text-gray-700 dark:text-gray-300 pr-2">
+                        <p class="font-semibold text-gray-500 dark:text-gray-400">No players assigned yet.</p>
+                    </div>
+                </section>
+                
+            </div>
+        </div>
+
+        <!-- NEW: LIVE CHAT ROOM SECTION -->
+        <section class="mt-12">
+             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden transition-colors duration-500 border-t-8 border-red-600 dark:border-red-500">
+                
+                <!-- Chat Header -->
+                <div class="p-4 bg-gray-100 dark:bg-gray-700 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">
+                        💬 Mikoko League Live Chat
+                    </h2>
+                    <span id="chatUserIdDisplay" class="text-sm text-gray-500 dark:text-gray-400 font-mono italic"></span>
+                </div>
+
+                <!-- Chat Messages Container -->
+                <div id="chatMessages" class="flex flex-col space-y-4">
+                    <div class="text-center p-4 text-sm text-gray-500 dark:text-gray-400" id="chatLoadingMessage">
+                        Connecting to chat...
+                    </div>
+                    <!-- Messages will be rendered here -->
+                </div>
+
+                <!-- Chat Input Area (Hidden until user signs in) -->
+                <div id="chatInputArea" class="p-3 border-t border-gray-200 dark:border-gray-700 flex items-center bg-gray-50 dark:bg-gray-800 sticky bottom-0 hidden">
+                    
+                    <!-- Voice Note Icon -->
+                    <button id="vnButton" class="chat-icon-button p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 focus:outline-none" title="Send Voice Note (Simulated)">
+                        <i class="fas fa-microphone text-xl"></i>
+                    </button>
+
+                    <!-- Stickers Icon -->
+                    <button id="stickerButton" class="chat-icon-button p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 focus:outline-none" title="Send Sticker (Simulated)">
+                        <i class="far fa-smile text-xl"></i>
+                    </button>
+
+                    <!-- Text Input -->
+                    <input 
+                        type="text" 
+                        id="messageInput" 
+                        placeholder="Type a message..." 
+                        class="flex-grow mx-3 p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-full text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-red-500 focus:border-red-500"
+                        onkeypress="if(event.key === 'Enter') document.getElementById('sendButton').click()"
+                    >
+
+                    <!-- Send Button -->
+                    <button id="sendButton" class="chat-icon-button p-2 bg-red-600 hover:bg-red-700 text-white rounded-full h-10 w-10 flex items-center justify-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fas fa-paper-plane text-lg"></i>
+                    </button>
+                </div>
+                
+                <!-- Sign-in Prompt (Shown if user hasn't set name) -->
+                <div id="chatSignInPrompt" class="p-4 text-center bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-medium cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" style="display: none;">
+                    Tap here to set your name and start chatting!
+                </div>
+            </div>
+        </section>
+
+<section class="section-card p-6 rounded-2xl bg-gray-900/60 backdrop-blur-md shadow-xl border border-gray-700">
+    <h2 class="text-3xl font-extrabold text-red-400 mb-6 flex items-center tracking-wide">
+        <i class="fas fa-futbol mr-3 text-red-300 drop-shadow"></i>
+        Top Scorers Leaderboard
+    </h2>
+
+    <!-- Scorer List Container -->
+    <div id="scorersList" 
+        class="space-y-3 pr-2 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-yellow-500 scrollbar-track-gray-800">
+        
+        <!-- Placeholder -->
+        <div class="flex justify-center">
+            <p class="text-gray-400 text-center italic animate-pulse">
+                Fetching latest top scorers...
+            </p>
+        </div>
+
+        <!-- Scorers will load here dynamically -->
+    </div>
+</section>
+
+    </main>
+    
+    <footer class="bg-gray-800 dark:bg-gray-950 text-white p-6 mt-12 shadow-inner transition-colors duration-500">
+        <div class="container mx-auto text-center">
+            <p class="text-sm font-light">
+                Mikoko League | Public View. Built to be fully responsive.
+            </p>
+        </div>
+    </footer>
+
+
+<script type="module">
+    // --- Firebase SDK Imports ---
+    import { initializeApp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- Configuration ---
+    const CHAT_USER_NAME_KEY = 'mikoko_chat_user_name';
+    const MAX_TEAMS = 8;
+    const TEAM_STORAGE_KEY = 'mikoko_teams_admin';
+    const PLAYER_STORAGE_KEY = 'mikoko_players_admin';
+    const FIXTURE_STORAGE_KEY = 'mikoko_fixtures_admin';
+    const UNASSIGNED_PLAYER_STORAGE_KEY = 'mikoko_unassigned_players';
+    
+    // --- Global Firebase Instances ---
+    let app, db, auth;
+    let currentUserId = null;
+    let chatUserName = localStorage.getItem(CHAT_USER_NAME_KEY) || null;
+    
+    // --- Local State Variables ---
+    let leagueTeams = []; 
+    let leagueFixtures = [];
+    let draftedPlayers = [];
+    let unassignedPlayers = []; 
+    
+    // --- DOM Elements ---
+    const leagueTableBody = document.getElementById('leagueTableBody');
+    const fixtureListContainer = document.getElementById('fixtureListContainer');
+    const rosterList = document.getElementById('rosterList');
+    const playerNameInput = document.getElementById('playerNameInput');
+    const registerPlayerButton = document.getElementById('registerPlayerButton');
+    const playerRegistrationMessage = document.getElementById('playerRegistrationMessage');
+
+    // Chat Elements
+    const usernameModal = document.getElementById('usernameModal');
+    const chatUserNameInput = document.getElementById('chatUserNameInput');
+    const saveUserNameButton = document.getElementById('saveUserNameButton');
+    const chatMessagesContainer = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const vnButton = document.getElementById('vnButton');
+    const stickerButton = document.getElementById('stickerButton');
+    const chatInputArea = document.getElementById('chatInputArea');
+    const chatSignInPrompt = document.getElementById('chatSignInPrompt');
+    const chatLoadingMessage = document.getElementById('chatLoadingMessage');
+    const authStatusIndicator = document.getElementById('authStatusIndicator');
+    const chatUserIdDisplay = document.getElementById('chatUserIdDisplay');
+
+
+    // --- Core State Management and Initialization ---
+
+    document.addEventListener('DOMContentLoaded', initializePublicDashboard);
+
+    async function initializePublicDashboard() {
+        // Set up Firebase
+        await setupFirebase();
+        
+        // Load league data (legacy storage)
+        loadStateFromLocalStorage();
+        sortAndRenderTeams();
+        renderFixtures();
+        renderRosterList();
+
+        // Attach static event handlers
+        if (registerPlayerButton) registerPlayerButton.onclick = registerNewPlayer;
+        
+        // Attach Chat Event Handlers
+        sendButton.onclick = () => sendMessage('text', messageInput.value.trim());
+        vnButton.onclick = () => sendMessage('vn', '🎤 Voice Note (Simulated)');
+        stickerButton.onclick = () => sendMessage('sticker', '🤩 Sticker (Simulated)');
+        
+        saveUserNameButton.onclick = handleSaveUserName;
+        chatSignInPrompt.onclick = showUsernameModal;
+        
+        // Initial chat state check
+        updateChatUI();
+    }
+    
+    // --- Firebase Initialization and Authentication ---
+
+    async function setupFirebase() {
+        try {
+            // Configuration and App ID are provided by the canvas environment
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+            if (Object.keys(firebaseConfig).length === 0) {
+                 console.error("Firebase configuration is missing.");
+                 authStatusIndicator.textContent = "Auth Error: Config Missing";
+                 return;
+            }
+
+            // setLogLevel('debug'); // Optional: for debugging Firestore/Auth
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            authStatusIndicator.textContent = "Signing In...";
+            
+            // Authentication using custom token or anonymous sign-in
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            
+            if (initialAuthToken) {
+                await signInWithCustomToken(auth, initialAuthToken);
+            } else {
+                await signInAnonymously(auth);
+            }
+
+            // Auth state listener to set current user ID
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUserId = user.uid;
+                    authStatusIndicator.textContent = `User: ${currentUserId.substring(0, 8)}...`;
+                    setupChatListener();
+                } else {
+                    currentUserId = null;
+                    authStatusIndicator.textContent = 'Signed Out';
+                }
+            });
+
+        } catch (error) {
+            console.error("Firebase initialization or sign-in failed:", error);
+            authStatusIndicator.textContent = `Auth Error: ${error.code}`;
+        }
+    }
+
+    // --- Chat Account Setup Modal ---
+
+    function showUsernameModal() {
+        chatUserNameInput.value = chatUserName || '';
+        usernameModal.classList.remove('hidden');
+    }
+
+    function hideUsernameModal() {
+        usernameModal.classList.add('hidden');
+    }
+
+    function handleSaveUserName() {
+        const name = chatUserNameInput.value.trim();
+        if (name) {
+            chatUserName = name;
+            localStorage.setItem(CHAT_USER_NAME_KEY, name);
+            hideUsernameModal();
+            updateChatUI();
+        } else {
+            // Use a custom modal/message for error instead of alert
+            alertMessage("Please enter a valid chat name.");
+        }
+    }
+    
+    function updateChatUI() {
+        if (!chatUserName) {
+            chatInputArea.classList.add('hidden');
+            chatSignInPrompt.style.display = 'block';
+            showUsernameModal();
+            // Also disable the send button until sign-in is complete
+            sendButton.disabled = true;
+        } else {
+            chatInputArea.classList.remove('hidden');
+            chatSignInPrompt.style.display = 'none';
+            sendButton.disabled = messageInput.value.trim().length === 0;
+            messageInput.oninput = () => {
+                sendButton.disabled = messageInput.value.trim().length === 0;
+            };
+            // Display username ID in the chat header
+            chatUserIdDisplay.textContent = `User: ${chatUserName}`;
+        }
+    }
+
+    // --- Firestore Chat Functions ---
+
+    /** Gets the correct public collection path. */
+    function getChatCollectionRef() {
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // Path: /artifacts/{appId}/public/data/chat_messages
+        return collection(db, 'artifacts', appId, 'public', 'data', 'chat_messages');
+    }
+    
+    /** Sends a message to Firestore. */
+    async function sendMessage(type, content) {
+        if (!chatUserName || !currentUserId || content.length === 0) {
+            if (!chatUserName) showUsernameModal();
+            return;
+        }
+        
+        try {
+            await addDoc(getChatCollectionRef(), {
+                userId: currentUserId,
+                userName: chatUserName,
+                content: content,
+                type: type, // 'text', 'vn', 'sticker'
+                timestamp: serverTimestamp(),
+            });
+            
+            messageInput.value = ''; // Clear input only for text messages
+            sendButton.disabled = true;
+            scrollToBottom(chatMessagesContainer);
+
+        } catch (error) {
+            console.error("Error sending message:", error);
+            alertMessage("Failed to send message. Check console for details.");
+        }
+    }
+
+    /** Sets up the real-time listener for chat messages. */
+    function setupChatListener() {
+        if (!db) return; // Wait until db is initialized
+
+        const q = query(getChatCollectionRef(), orderBy('timestamp', 'asc'));
+
+        // Listen for real-time changes
+        onSnapshot(q, (snapshot) => {
+            if (chatLoadingMessage) chatLoadingMessage.style.display = 'none';
+            
+            // Check if there are new documents to render
+            if (snapshot.docChanges().length > 0) {
+                // Clear the container only on the initial load, or just append changes
+                if (chatMessagesContainer.children.length === 0) {
+                    chatMessagesContainer.innerHTML = ''; 
+                }
+                
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        const message = change.doc.data();
+                        renderMessage(message);
+                        scrollToBottom(chatMessagesContainer);
+                    }
+                    // Ignoring 'modified' and 'removed' for a simple chat
+                });
+            } else if (chatMessagesContainer.children.length === 0) {
+                 // Show no messages found if the listener fires and no messages exist
+                 chatMessagesContainer.innerHTML = `<div class="text-center p-4 text-sm text-gray-500 dark:text-gray-400">Be the first to say something!</div>`;
+            }
+        }, (error) => {
+             console.error("Error listening to messages:", error);
+             chatMessagesContainer.innerHTML = `<div class="text-center p-4 text-sm text-red-500 dark:text-red-400">Error loading chat: ${error.message}</div>`;
+        });
+    }
+    
+    /** Renders a single message object to the DOM. */
+    function renderMessage(message) {
+        const isSelf = message.userId === currentUserId;
+        const alignClass = isSelf ? 'self-end' : 'self-start';
+        const colorClass = isSelf ? 'bg-red-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100';
+        const nameClass = isSelf ? 'text-red-300' : 'text-gray-500 dark:text-gray-400';
+        const time = message.timestamp ? new Date(message.timestamp.seconds * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '...';
+        
+        let contentDisplay = message.content;
+        let icon = '';
+        
+        switch (message.type) {
+            case 'vn':
+                icon = '<i class="fas fa-volume-up mr-2"></i>';
+                contentDisplay = `${icon} ${contentDisplay}`;
+                break;
+            case 'sticker':
+                icon = '<i class="fas fa-tag mr-2"></i>';
+                contentDisplay = `${icon} ${contentDisplay}`;
+                break;
+            case 'text':
+            default:
+                // No special icon for text
+                break;
+        }
+
+        const msgHtml = `
+            <div class="flex flex-col ${alignClass} message-bubble">
+                <div class="text-xs ${nameClass} mb-0.5 px-3">
+                    ${message.userName}
+                </div>
+                <div class="rounded-xl p-3 shadow-md ${colorClass}">
+                    <p class="text-sm">${contentDisplay}</p>
+                </div>
+                <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 ${isSelf ? 'text-right' : 'text-left'}">${time}</span>
+            </div>
+        `;
+
+        // Check if the message is already rendered (Firestore can sometimes send duplicates on initial load)
+        // For simplicity, we just append, but this ensures a clean slate on full re-render.
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = msgHtml;
+        chatMessagesContainer.appendChild(tempDiv.firstChild);
+    }
+    
+    function scrollToBottom(element) {
+        element.scrollTop = element.scrollHeight;
+    }
+
+    /** Generic function to display error/confirmation (replaces window.alert) */
+    function alertMessage(message) {
+        console.warn("User Message:", message);
+        // For a real app, you would implement a custom notification toaster/modal here.
+        // For now, we'll log to console and optionally use a quick temporary DOM element.
+    }
+
+
+    // --- Persistence (Read-Only) ---
+
+    /** Loads all data from Local Storage (Read-Only for Public View). */
+    function loadStateFromLocalStorage() {
+        const storedTeams = localStorage.getItem(TEAM_STORAGE_KEY);
+        const storedFixtures = localStorage.getItem(FIXTURE_STORAGE_KEY);
+        const storedPlayers = localStorage.getItem(PLAYER_STORAGE_KEY);
+        const storedUnassigned = localStorage.getItem(UNASSIGNED_PLAYER_STORAGE_KEY); 
+
+        if (storedTeams) leagueTeams = JSON.parse(storedTeams);
+        if (storedFixtures) leagueFixtures = JSON.parse(storedFixtures);
+        if (storedPlayers) draftedPlayers = JSON.parse(storedPlayers);
+        if (storedUnassigned) unassignedPlayers = JSON.parse(storedUnassigned);
+    }
+    
+    /** Saves ONLY the newly registered player to the Unassigned list. */
+    function saveUnassignedPlayers() {
+        localStorage.setItem(UNASSIGNED_PLAYER_STORAGE_KEY, JSON.stringify(unassignedPlayers));
+    }
+
+
+    // --- Player Registration (Public Feature) ---
+    
+    window.registerNewPlayer = function() {
+        const name = playerNameInput.value.trim();
+
+        if (!name || name.length < 3) {
+            playerRegistrationMessage.textContent = "Please enter your full name.";
+            playerRegistrationMessage.classList.remove('text-green-500', 'dark:text-green-400');
+            playerRegistrationMessage.classList.add('text-red-500', 'dark:text-red-400');
+            return;
+        }
+        
+        // Simple check to prevent duplicate registration by name
+        const isAlreadyRegistered = unassignedPlayers.some(p => p.name.toLowerCase() === name.toLowerCase());
+        const isDrafted = draftedPlayers.some(p => p.name.toLowerCase() === name.toLowerCase());
+
+        if (isAlreadyRegistered || isDrafted) {
+             playerRegistrationMessage.textContent = "You are already registered or have been drafted!";
+             playerRegistrationMessage.classList.remove('text-green-500', 'dark:text-green-400');
+             playerRegistrationMessage.classList.add('text-red-500', 'dark:text-red-400');
+             return;
+        }
+
+        registerPlayerButton.disabled = true;
+        registerPlayerButton.textContent = "Registering...";
+        playerRegistrationMessage.textContent = "";
+
+        setTimeout(() => {
+            const newPlayer = {
+                id: crypto.randomUUID(), // Use a unique ID
+                name: name,
+                skillScore: Math.floor(Math.random() * 10) + 1, // Random skill score for fun
+                registeredAt: Date.now()
+            };
+
+            unassignedPlayers.push(newPlayer);
+            saveUnassignedPlayers();
+            playerNameInput.value = '';
+
+            registerPlayerButton.disabled = false;
+            registerPlayerButton.textContent = "Register Me";
+            
+            playerRegistrationMessage.classList.remove('text-red-500', 'dark:text-red-400');
+            playerRegistrationMessage.classList.add('text-green-500', 'dark:text-green-400');
+            playerRegistrationMessage.textContent = `✅ Success! Welcome, ${name}. The admin has been notified and will draft you to a club soon!`;
+
+        }, 500);
+    }
+
+
+    // --- Rendering Functions (Public View) ---
+
+    function sortAndRenderTeams() {
+        // Sort teams by Points (desc), then by W (desc), then by L (asc)
+        leagueTeams.sort((a, b) => {
+            if (b.Pts !== a.Pts) return b.Pts - a.Pts;
+            if (b.W !== a.W) return b.W - a.W;
+            if (a.L !== b.L) return a.L - b.L;
+            return 0;
+        });
+        
+        renderLeagueTable(leagueTeams);
+    }
+
+    function renderLeagueTable(teams) {
+        if (leagueTableBody) leagueTableBody.innerHTML = ''; 
+        
+        if (teams.length === 0) {
+             leagueTableBody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-gray-500 dark:text-gray-400">No teams registered yet...</td></tr>`;
+             return;
+        }
+
+        teams.forEach((team, index) => {
+            const isTopFour = index < 4;
+
+            const row = document.createElement('tr');
+            row.className = `hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200`;
+            
+            const rankClass = isTopFour ? 'text-red-600 dark:text-red-400 font-bold' : 'text-gray-500 dark:text-gray-400';
+
+            row.innerHTML = `
+                <td class="px-3 py-4 text-center text-sm font-medium ${rankClass}">${index + 1}</td>
+                <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100 text-sm">${team.name}</td>
+                <td class="px-3 py-4 text-center text-sm">${team.P || 0}</td>
+                <td class="px-3 py-4 text-center text-sm">${team.W || 0}</td>
+                <td class="px-3 py-4 text-center text-sm">${team.D || 0}</td>
+                <td class="px-3 py-4 text-center text-sm">${team.L || 0}</td>
+                <td class="px-3 py-4 text-center text-sm font-bold ${rankClass}">${team.Pts || 0}</td>
+            `;
+            if (leagueTableBody) leagueTableBody.appendChild(row);
+        });
+
+        // Fill remaining slots
+        for (let i = teams.length; i < MAX_TEAMS; i++) {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-100 dark:hover:bg-gray-700';
+            row.innerHTML = `
+                <td class="px-3 py-4 text-center text-sm text-gray-400">${i + 1}</td>
+                <td class="px-6 py-4 text-gray-400 text-sm">NIL - Slot Open</td>
+                <td class="px-3 py-4 text-center text-sm text-gray-400">0</td>
+                <td class="px-3 py-4 text-center text-sm text-gray-400">0</td>
+                <td class="px-3 py-4 text-center text-sm text-gray-400">0</td>
+                <td class="px-3 py-4 text-center text-sm text-gray-400">0</td>
+                <td class="px-3 py-4 text-center text-sm text-gray-400">0</td>
+            `;
+            if (leagueTableBody) leagueTableBody.appendChild(row);
+        }
+    }
+
+    function renderFixtures() {
+        if (!fixtureListContainer) return;
+        fixtureListContainer.innerHTML = '';
+
+        if (leagueFixtures.length === 0) {
+            fixtureListContainer.innerHTML = `<p class="text-sm font-semibold text-gray-500 dark:text-gray-400">No matches scheduled yet.</p>`;
+            return;
+        }
+
+        leagueFixtures.forEach(fixture => {
+            const isCompleted = fixture.status === 'COMPLETED';
+            const statusText = isCompleted ? 'Completed' : 'Pending';
+            const statusClass = isCompleted ? 'status-completed' : 'status-pending';
+            
+            const scoreDisplay = isCompleted 
+                ? `<span class="text-xl font-extrabold text-red-600 dark:text-red-400">${fixture.score1} - ${fixture.score2}</span>`
+                : `<span class="text-gray-500 dark:text-gray-400 font-medium">TBD</span>`;
+
+            const card = document.createElement('div');
+            card.className = `fixture-card bg-white dark:bg-gray-800 border-l-4 border-red-500 dark:border-red-600`;
+            card.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-xs ${statusClass} px-3 py-1 rounded-full">${statusText}</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">${fixture.date}</span>
+                </div>
+                
+                <div class="flex justify-between items-center mt-1">
+                    <p class="text-lg font-bold text-gray-900 dark:text-gray-100">${fixture.team1}</p>
+                    ${scoreDisplay}
+                    <p class="text-lg font-bold text-gray-900 dark:text-gray-100">${fixture.team2}</p>
+                </div>
+            `;
+            fixtureListContainer.appendChild(card);
+        });
+    }
+
+    function renderRosterList() {
+        if (!rosterList) return;
+        rosterList.innerHTML = '';
+        
+        if (draftedPlayers.length === 0) {
+             rosterList.innerHTML = '<p class="font-semibold text-gray-500 dark:text-gray-400">No players assigned to clubs yet. Register to be the first!</p>';
+             return;
+        }
+        
+        // Group players by team name
+        const playersByTeam = leagueTeams.map(team => ({
+            name: team.name,
+            players: draftedPlayers.filter(p => p.team === team.name)
+        }));
+
+        playersByTeam.forEach(teamData => {
+            // Team Heading
+            const teamHeader = document.createElement('p');
+            teamHeader.className = 'font-bold text-red-600 dark:text-red-400 mt-4 mb-1 uppercase text-sm tracking-wider border-b border-red-200 dark:border-red-700 pb-1';
+            teamHeader.textContent = `${teamData.name} (${teamData.players.length} Players)`;
+            rosterList.appendChild(teamHeader);
+
+            // Player List
+            if (teamData.players.length > 0) {
+                teamData.players.forEach(player => {
+                    const playerItem = document.createElement('p');
+                    playerItem.className = 'text-gray-700 dark:text-gray-300 ml-2';
+                    playerItem.textContent = `• ${player.name} (Avg Skill: ${player.skillScore})`;
+                    rosterList.appendChild(playerItem);
+                });
+            } else {
+                 const playerItem = document.createElement('p');
+                playerItem.className = 'text-gray-500 dark:text-gray-400 ml-2 italic';
+                playerItem.textContent = `No players drafted yet.`;
+                rosterList.appendChild(playerItem);
+            }
+        });
+    }
+
+</script>
+</body>
+</html>
