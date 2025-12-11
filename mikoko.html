@@ -283,6 +283,51 @@
             </div>
         </div>
 
+
+<!-- MATCHES SECTION -->
+<section id="public-matches" class="mt-12">
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden transition-colors duration-500 border-t-8 border-red-600 dark:border-red-500 p-6">
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+      <i class="fas fa-calendar-alt mr-3 text-red-400"></i> Upcoming / Completed Matches
+    </h2>
+  <div id="matches"></div>
+<script>
+async function fetchPublicMatches() {
+  const res = await fetch("http://localhost:3000/api/matches");
+  const matches = await res.json();
+  
+  document.getElementById("matches").innerHTML = matches.map(m => `
+    <div>${m.home_team} ${m.score || "-"} ${m.away_team} - ${m.date}</div>
+  `).join('');
+}
+
+fetchPublicMatches();
+</script>
+
+  </div>
+</section>
+
+<script>
+async function fetchPublicMatches() {
+    const matchesDiv = document.getElementById("matches");
+    try {
+        const res = await fetch("http://localhost:3000/api/matches?league=mikoko");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const matches = await res.json();
+        
+        matchesDiv.innerHTML = matches.map(m => `
+            <div>${m.home_team} ${m.score || "-"} ${m.away_team} - ${m.date}</div>
+        `).join('');
+    } catch (err) {
+        console.error("Failed to load matches:", err);
+        matchesDiv.innerHTML = '<p class="text-red-500">Failed to load matches. Check console.</p>';
+    }
+}
+
+fetchPublicMatches();
+</script>
+
+
         <!-- NEW: LIVE CHAT ROOM SECTION -->
         <section class="mt-12">
              <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden transition-colors duration-500 border-t-8 border-red-600 dark:border-red-500">
