@@ -1,20 +1,28 @@
 {
-  "name": "football-world-2",
+  "name": "football-hub-",
   "version": "1.0.0",
-  "description": "",
-  "main": "mikoko.js",
+  "description": "football hub",
+  "main": "backend/script.js",
+  "workspaces": ["frontend", "backend"],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install-all": "npm install && npm install --workspace backend && npm install --workspace frontend",
+    "clean": "rimraf node_modules dist-electron dist frontend/dist backend/dist backend/node_modules/.cache",
+    "build": "npm run build:frontend && npm run build:backend",
+    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Emmanuel-Onyeike/FOOTBALL-HUB-.git"
+  },
+  "dependencies": {
+    "concurrently": "^9.2.1"
   },
   "keywords": [],
-  "author": "",
+  "author": "dev by tbelzbby",
   "license": "ISC",
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.15.3"
-  }
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Emmanuel-Onyeike/FOOTBALL-HUB-/issues"
+  },
+  "homepage": "https://github.com/Emmanuel-Onyeike/FOOTBALL-HUB-#readme"
 }
